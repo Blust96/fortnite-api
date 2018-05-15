@@ -63,3 +63,9 @@ const PlayerStatsSchema = mongoose.Schema({
 }, {
     timestamps: true
 });
+
+const PlayerStat = mongoose.model('PlayerStats', PlayerStatsSchema);
+
+exports.test = () => {
+  console.log("test");
+}

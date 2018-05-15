@@ -1,12 +1,10 @@
 // Import modules
 const express = require('express');
 const bodyParser = require('body-parser');
-const routes = require('./routes/routes.js');
 
 // Database configuration
 const dbConfig = require('./config/database.config.js');
 const mongoose = require('mongoose');
-
 mongoose.Promise = global.Promise;
 
 // Connecting to the database
@@ -20,6 +18,7 @@ mongoose.connect(dbConfig.url)
 
 // Create express app
 const app = express();
+require('./src/routes/playerstats.route.js')(app);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
