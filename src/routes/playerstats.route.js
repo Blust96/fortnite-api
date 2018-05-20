@@ -1,8 +1,8 @@
 module.exports = (app) => {
 
-  const playerStats = require('../controllers/playerstats.controller.js');
+    const playerStats = require('../controllers/playerstats.controller.js');
 
-  // Test
-  app.get('/', playerStats.test);
+    // Test
+    app.get('/', playerStats.displayTest);
 
 }
