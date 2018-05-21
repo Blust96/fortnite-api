@@ -57,6 +57,8 @@ module.exports = {
 
     },
 
+    // Convert received datas into our schema model
+    // TODO: Fix time played for games modes
     convert(stats, user, platform) {
 
         return new Promise(resolve => {

@@ -93,6 +93,7 @@ const PlayerStatsSchema = mongoose.Schema({
     timestamps: true
 });
 
+// TODO: Check if stats already exists for this player, then create or update like getGameModes
 PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
 
     return new Promise((resolve, reject) => {
@@ -108,14 +109,19 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
                     fortniteConnection.getStatsBR(username, platform)
 
                         .then(result => {
-                            let StatsModel = mongoose.model('PlayerStats', PlayerStatsSchema);
+
+                            // Document creation that will be save into fortniteApi database
+                            let StatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
                             let allStats = new StatsModel(result);
-                            allStats.save(function (err) {
+
+                            // Add document into collection globalStats
+                            allStats.save((err) => {
                                 if (err)
-                                    console.log(err);
+                                    reject(err);
+                                else
+                                    resolve(result);
                             });
-                            console.log(result);
-                            resolve(result);
+
                         })
                         .catch(err => {
                             reject(err);
@@ -127,40 +133,104 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
 
             });
 
-        }
+        } else
+            reject('Wrong platform or gamemode');
 
     });
 
 }
 
+// TODO: Check date comparison, and update post
 PlayerStatsSchema.methods.getModeStats = function (username, platform, gamemode) {
 
     return new Promise((resolve, reject) => {
 
         if (fortniteTools.checkPlatform(platform) && fortniteTools.checkGameMode(gamemode)) {
 
-            fortniteConnection.login()
+            // Document creation that will be use to check datas
+            let StatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
 
-                .then(() => {
+            // Check if player exists in database and has stats for specified platform
+            StatsModel.
+                findOne({
+                    'info.username': username,
+                    'info.platform': platform
+                }, 'global updatedAt _id', (err, dbResult) => {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
 
-                    console.log('Successfully connected to Fortnite API');
+                        // Vars to compare current and updated date time
+                        let currentDateTime = new Date();
+                        let updateDateTime = new Date(dbResult.updatedAt);
+                        let crawlApi = false;
 
-                    fortniteConnection.getStatsBR(username, platform)
+                        // Date comparison
+                        // If it's same day and same hour
+                        if(currentDateTime.getDay() == updateDateTime.getDay() &&
+                            currentDateTime.getHours() == updateDateTime.getHours()) {
 
-                        .then(result => {
-                            resolve(result);
-                        })
-                        .catch(err => {
-                            reject(err);
-                        })
+                            // If interval is lower than 10 minutes
+                            if(currentDateTime.getMinutes() - updateDateTime.getMinutes() < 10) {
+                                console.log('Resolve from database');
+                                resolve(dbResult);
+                            }  else {
+                                crawlApi = true;
+                            }
 
-                }).catch(err => {
-                console.log('Could not connect Fortnite API. Exiting now...');
-                reject(err);
+                        } else {
+                            crawlApi = true;
+                        }
 
-            });
+                        // If interval is bigger than 10 minutes then get stats from Fortnite API
+                        if(crawlApi) {
 
-        }
+                            console.log('Crawl API');
+
+                            fortniteConnection.login()
+
+                                .then(() => {
+
+                                    console.log('Successfully connected to Fortnite API');
+
+                                    fortniteConnection.getStatsBR(username, platform)
+
+                                        .then(result => {
+
+                                            // Document creation that will be save into fortniteApi database
+                                            let StatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
+                                            let allStats = new StatsModel(result);
+
+                                            // Update document by id
+                                            allStats.update({_id: dbResult._id },
+                                                            result,
+                                                            (err) => {
+                                                                if (err)
+                                                                    reject(err);
+                                                                else
+                                                                    resolve(result);
+                                                            });
+
+                                        })
+                                        .catch(err => {
+                                            reject(err);
+                                        })
+
+                                }).catch(err => {
+                                console.log('Could not connect Fortnite API. Exiting now...');
+                                reject(err);
+
+                            });
+
+                        }
+
+                    }
+
+                });
+
+        } else
+            reject('Wrong platform or gamemode');
 
     });
 

@@ -15,7 +15,7 @@ exports.getPlayerStats = (req, res) => {
         })
         .catch(err => {
             return res.send(err);
-        })
+        });
 
 }
 
@@ -26,5 +26,14 @@ exports.getModeStats = (req, res) => {
     let platform = req.params.platform;
     let username = req.params.username;
     let gamemode = req.params.gamemode;
+
+    // Promise execution
+    playerStats.getModeStats(username, platform, gamemode)
+        .then(result => {
+            return res.send(result);
+        })
+        .catch(err => {
+            return res.send(err);
+        });
 
 }
