@@ -1,4 +1,5 @@
-const EndPoint = require('../config/endpoints.js');
+const endPoint = require('../config/endpoints.js');
+const fortniteTools = require('./fortnite_tools.js');
 const rp = require('request-promise');
 
 class FortniteAuth {
@@ -11,12 +12,55 @@ class FortniteAuth {
             console.log('Credentials are not correct');
         }
 
+        setInterval(() => {
+            this.checkToken();
+        }, 1000);
+
+    }
+
+    checkToken() {
+
+        // Dates initialisation
+        let actualDate = new Date();
+        let expireDate = new Date(new Date(this.expires_at).getTime() - 15 * 60000);
+
+        // If access_token and expirates_at exists
+        if (this.access_token && this.expires_at && expireDate < actualDate) {
+
+            this.expires_at = undefined;
+
+            // Token regeneration
+            rp({
+                url: endPoint.OAUTH_TOKEN,
+                headers: {
+                    Authorization: "basic " + this.credentials[3]
+                },
+                form: {
+                    grant_type: "refresh_token",
+                    refresh_token: this.refresh_token,
+                    includePerms: true
+                },
+                method: "POST",
+                json: true
+            })
+            .then(data => {
+                this.expires_at = data.expires_at;
+                this.access_token = data.access_token;
+                this.refresh_token = data.refresh_token;
+            })
+            .catch(err => {
+                console.log("Unable to regenerate token");
+                throw new Error(err);
+            });
+
+        }
     }
 
     login() {
 
         return new Promise((resolve, reject) => {
 
+            // Token options
             const tokenConfig = {
                 grant_type: "password",
                 username: this.credentials[0],
@@ -24,9 +68,9 @@ class FortniteAuth {
                 includePerms: true
             };
 
-            // GET TOKEN
+            // Token generation
             rp({
-                url: EndPoint.OAUTH_TOKEN,
+                url: endPoint.OAUTH_TOKEN,
                 headers: {
                     Authorization: "basic " + this.credentials[2]
                 },
@@ -35,10 +79,12 @@ class FortniteAuth {
                 json: true
             })
             .then(data => {
+
                 this.access_token = data.access_token;
-                // rp 2
+
+                // If access_token has been found
                 rp({
-                    url: EndPoint.OAUTH_EXCHANGE,
+                    url: endPoint.OAUTH_EXCHANGE,
                     headers: {
                         Authorization: "bearer " + this.access_token
                     },
@@ -46,10 +92,12 @@ class FortniteAuth {
                     json: true
                 })
                 .then(data => {
+
                     this.code = data.code;
-                    //rp 3
+
+                    // If code has been found
                     rp({
-                        url: EndPoint.OAUTH_TOKEN,
+                        url: endPoint.OAUTH_TOKEN,
                         headers: {
                             Authorization:
                             "basic " + this.credentials[3]
@@ -64,6 +112,7 @@ class FortniteAuth {
                         json: true
                     })
                     .then(data => {
+                        // Saving token informations into vars
                         this.expires_at = data.expires_at;
                         this.access_token = data.access_token;
                         this.refresh_token = data.refresh_token;
@@ -80,6 +129,116 @@ class FortniteAuth {
             .catch(() => {
                 reject("Please enter good token");
             });
+        });
+    }
+
+    lookup(username) {
+
+        return new Promise((resolve, reject) => {
+
+            rp({
+                url: endPoint.lookup(username),
+                headers: {
+                    Authorization: "bearer " + this.access_token
+                },
+                method: "GET",
+                json: true
+            })
+            .then(user => {
+                resolve(user);
+            })
+            .catch(err => {
+                reject(err);
+            });
+
+        });
+
+    }
+
+    getStatsBR(username, platform) {
+
+        return new Promise((resolve, reject) => {
+
+            this.lookup(username)
+
+                .then(user => {
+
+                    rp({
+                        url: endPoint.statsBR(user.id),
+                        headers: {
+                            Authorization: "bearer " + this.access_token
+                        },
+                        method: "GET",
+                        json: true
+                    })
+                        .then(stats => {
+                            if (fortniteTools.checkStatsPlatform(
+                                stats,
+                                platform.toLowerCase() || "pc"
+                                )
+                            ) {
+                                fortniteTools.convert(
+                                    stats,
+                                    user,
+                                    platform.toLowerCase()
+                                ).then(resultStats => {
+                                    resolve(resultStats);
+                                });
+                            } else {
+                                reject(
+                                    "Impossible to fetch User. User not found on this platform"
+                                );
+                            }
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            reject("Impossible to fetch User.");
+                        });
+                })
+                .catch(() => {
+                    reject("Player Not Found");
+                });
+        });
+    }
+
+    checkPlayer(username, platform) {
+
+        return new Promise((resolve, reject) => {
+
+            this.lookup(username)
+
+                .then(data => {
+
+                    rp({
+                        url: endPoint.statsBR(data.id),
+                        headers: {
+                            Authorization: "bearer " + this.access_token
+                        },
+                        method: "GET",
+                        json: true
+                    })
+                        .then(stats => {
+                            if (
+                                fortniteTools.checkStatsPlatform(
+                                    stats,
+                                    platform.toLowerCase() || "pc"
+                                )
+                            ) {
+                                resolve(data);
+                            } else {
+                                reject(
+                                    "Impossible to fetch User. User not found on this platform"
+                                );
+                            }
+                        })
+                        .catch(() => {
+                            reject("Impossible to fetch User.");
+                        });
+
+                })
+                .catch(() => {
+                    reject("Player Not Found");
+                });
         });
     }
 

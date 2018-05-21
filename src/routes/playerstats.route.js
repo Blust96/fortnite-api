@@ -1,8 +1,11 @@
 module.exports = (app) => {
 
-    const playerStats = require('../controllers/playerstats.controller.js');
+    const playerStatsController = require('../controllers/playerstats.controller.js');
 
-    // Test
-    app.get('/', playerStats.displayTest);
+    // Route to get all player stats
+    app.get('/stats/:platform/:username', playerStatsController.getPlayerStats);
+
+    // Route to get specified game mode stats
+    app.get('/stats/:platform/:username/:gamemode', playerStatsController.getModeStats);
 
 }
