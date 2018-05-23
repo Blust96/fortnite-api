@@ -73,8 +73,8 @@ module.exports = {
                         top10: 0,
                         top12: 0,
                         top25: 0,
-                        "k/d": 0,
-                        "win%": 0,
+                        kdRate: 0,
+                        winPercentage: 0,
                         matches: 0,
                         kills: 0,
                         timePlayed: 0,
@@ -90,8 +90,8 @@ module.exports = {
                         top10: 0,
                         top12: 0,
                         top25: 0,
-                        "k/d": 0,
-                        "win%": 0,
+                        kdRate: 0,
+                        winPercentage: 0,
                         matches: 0,
                         kills: 0,
                         timePlayed: 0,
@@ -107,8 +107,8 @@ module.exports = {
                         top10: 0,
                         top12: 0,
                         top25: 0,
-                        "k/d": 0,
-                        "win%": 0,
+                        kdRate: 0,
+                        winPercentage: 0,
                         matches: 0,
                         kills: 0,
                         timePlayed: 0,
@@ -130,8 +130,8 @@ module.exports = {
                     top10s: 0,
                     top12s: 0,
                     top25s: 0,
-                    "k/d": 0,
-                    "win%": 0,
+                    kdRate: 0,
+                    winPercentage: 0,
                     matches: 0,
                     kills: 0,
                     killsPerMin: 0,
@@ -205,15 +205,15 @@ module.exports = {
                 /*
                  * Kill/death ratio calculation
                  */
-                result.global.solo["k/d"] = ratio(
+                result.global.solo["kdRate"] = ratio(
                     result.global.solo["kills"],
                     result.global.solo["matches"] - result.global.solo["wins"]
                 );
-                result.global.duo["k/d"] = ratio(
+                result.global.duo["kdRate"] = ratio(
                     result.global.duo["kills"],
                     result.global.duo["matches"] - result.global.duo["wins"]
                 );
-                result.global.squad["k/d"] = ratio(
+                result.global.squad["kdRate"] = ratio(
                     result.global.squad["kills"],
                     result.global.squad["matches"] - result.global.squad["wins"]
                 );
@@ -221,15 +221,15 @@ module.exports = {
                 /*
                  * Win rate calculation
                  */
-                result.global.solo["win%"] = rate(
+                result.global.solo["winPercentage"] = rate(
                     result.global.solo["wins"],
                     result.global.solo["matches"]
                 );
-                result.global.duo["win%"] = rate(
+                result.global.duo["winPercentage"] = rate(
                     result.global.duo["wins"],
                     result.global.duo["matches"]
                 );
-                result.global.squad["win%"] = rate(
+                result.global.squad["winPercentage"] = rate(
                     result.global.squad["wins"],
                     result.global.squad["matches"]
                 );
@@ -323,7 +323,7 @@ module.exports = {
                 /*
                  * Life time kill/death ratio calculation
                  */
-                result.lifetimeStats["k/d"] = ratio(
+                result.lifetimeStats["kdRate"] = ratio(
                     result.lifetimeStats["kills"],
                     result.lifetimeStats["matches"] - result.lifetimeStats["wins"]
                 );
@@ -331,7 +331,7 @@ module.exports = {
                 /*
                  * Life time win rate calculation
                  */
-                result.lifetimeStats["win%"] = rate(
+                result.lifetimeStats["winPercentage"] = rate(
                     result.lifetimeStats["wins"],
                     result.lifetimeStats["matches"]
                 );
