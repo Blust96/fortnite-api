@@ -103,46 +103,48 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
 
         if (fortniteTools.checkPlatform(platform)) {
 
-            // Connection to Fortnite API
-            fortniteConnection.login()
+            // Get statistics of specific player by username and platform
+            PlayerStatsModel.getStats(username, platform)
 
-                .then(() => {
+                .then(result => {
 
-                    console.log('Successfully connected to Fortnite API');
+                    // Check if player exists in database and has stats for specified platform
+                    if (result !== false) {
 
-                    // Get statistics of specific player by username and platform
-                    PlayerStatsModel.getStats(username, platform)
+                        var dbResult = result;
+                        console.log('has stats');
 
-                        .then(result => {
+                        // If currentDate is greater than last updatedDate defined in checkInterval
+                        if (PlayerStatsModel.checkInterval(dbResult.updatedAt)) {
+                            console.log('interval is greater');
 
-                            // Check if player exists in database and has stats for specified platform
-                            if(result !== false) {
+                            // Connection to Fortnite API
+                            fortniteConnection.login()
 
-                                var dbResult = result;
-                                console.log('has stats');
-
-                                // If currentDate is greater than last updatedDate defined in checkInterval
-                                if (PlayerStatsModel.checkInterval(dbResult.updatedAt)) {
-
-                                    console.log('interval is greater');
+                                .then(() => {
+                                    console.log('Successfully connected to Fortnite API');
 
                                     // Get stats for specified player
                                     fortniteConnection.getStatsBR(username, platform)
 
                                         .then(result => {
 
-                                            // Document creation that will be save into fortniteApi database
-                                            let StatsModel = new PlayerStatsModel();
-
                                             // Update document by id
-                                            StatsModel.findByIdAndUpdate(dbResult._id, result,
+                                            PlayerStatsModel.findByIdAndUpdate(dbResult._id, result,
 
                                                 (err, doc) => {
 
-                                                    if (err)
+                                                    console.log('findbyid');
+
+                                                    if (err) {
+                                                        console.log(err);
                                                         reject(err);
-                                                    else
+                                                    }
+
+                                                    else {
+                                                        console.log(doc);
                                                         resolve(doc);
+                                                    }
 
                                                 });
                                         })
@@ -151,11 +153,23 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
                                             reject(err);
                                         });
 
-                                } else {
-                                    resolve(dbResult);
-                                }
+                                })
+                                // login err
+                                .catch(err => {
+                                    reject(err);
+                                });
 
-                            } else {
+                        } else {
+                            resolve(dbResult);
+                        }
+
+                    } else {
+
+                        // Connection to Fortnite API
+                        fortniteConnection.login()
+
+                            .then(() => {
+                                console.log('Successfully connected to Fortnite API');
 
                                 // Get stats for specified player
                                 fortniteConnection.getStatsBR(username, platform)
@@ -178,18 +192,19 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
                                     .catch(err => {
                                         reject(err);
                                     });
+                            })
+                            // login err
+                            .catch(err => {
+                                reject(err);
+                            });
 
-                            }
+                    }
 
-                        })
-                        // getStats err
-                        .catch(err => {
-                            reject(err);
-                        })
-                    // Login err
-                }).catch(err => {
-                reject(err);
-            });
+                })
+                // getStats err
+                .catch(err => {
+                        reject(err);
+                    })
 
         } else
             reject('Wrong platform');
@@ -230,11 +245,8 @@ PlayerStatsSchema.methods.getModeStats = function (username, platform, gamemode)
 
                                         .then(result => {
 
-                                            // Document creation that will be save into fortniteApi database
-                                            let StatsModel = new PlayerStatsModel();
-
                                             // Update document by id
-                                            StatsModel.findByIdAndUpdate(dbResult._id, result,
+                                            PlayerStatsModel.findByIdAndUpdate(dbResult._id, result,
 
                                                 (err, doc) => {
 
@@ -305,6 +317,9 @@ PlayerStatsSchema.statics.checkInterval = (updatedAt) => {
     let updateDateTime = new Date(updatedAt);
     // Minutes interval allowed not to reload data from API
     let minutesInterval = 3;
+    let greater = true;
+
+    // console.log('current: ' + currentDateTime + ' updated : ' + updateDateTime);
 
     // Date comparison
     // If it's same day and same hour
@@ -312,13 +327,14 @@ PlayerStatsSchema.statics.checkInterval = (updatedAt) => {
         currentDateTime.getHours() == updateDateTime.getHours()) {
 
         // If interval is lower than the one defined
-        if (!(currentDateTime.getMinutes() - updateDateTime.getMinutes() < minutesInterval)) {
-            return true;
-        } else
-            return false;
+        if (currentDateTime.getMinutes() - updateDateTime.getMinutes() < minutesInterval) {
+            greater = false;
+        }
 
-    } else
-        return false;
+    }
+
+    console.log(greater);
+    return greater;
 
 }
 
