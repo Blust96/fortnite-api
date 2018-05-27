@@ -39,6 +39,14 @@ module.exports = {
             return true;
     },
 
+    // Check if stats type is valid
+    checkType: (type) => {
+        if(!(type == 'score' || type == 'wins' || type == 'kills'))
+            return false;
+        else
+            return true;
+    },
+
     // Check if a user has stats on the specified platform
     checkStatsPlatform: (stats, platform) => {
 

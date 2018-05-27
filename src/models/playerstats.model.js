@@ -95,7 +95,7 @@ const PlayerStatsSchema = mongoose.Schema({
 });
 
 // TODO: Better method organization (change call order)
-PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
+PlayerStatsSchema.methods.getPlayerStats = (username, platform) => {
 
     // PlayerStatsModel creation
     let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
@@ -138,7 +138,11 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
                                                         reject(errorsManager.getError(500));
                                                     }
                                                     else
-                                                        resolve(doc);
+                                                        resolve({
+                                                            'global': doc.global,
+                                                            'info': doc.info,
+                                                            'lifetimeStats': doc.lifetimeStats
+                                                        });
 
                                                 });
                                         })
@@ -156,7 +160,11 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
                                 });
 
                         } else {
-                            resolve(dbResult);
+                            resolve({
+                                'global': dbResult.global,
+                                'info': dbResult.info,
+                                'lifetimeStats': dbResult.lifetimeStats
+                            });
                         }
 
                     } else {
@@ -181,9 +189,12 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
                                                 console.log(err);
                                                 reject(errorsManager.getError(err));
                                             }
-
                                             else
-                                                resolve(result);
+                                                resolve({
+                                                    'global': result.global,
+                                                    'info': result.info,
+                                                    'lifetimeStats': result.lifetimeStats
+                                                });
                                         });
 
                                     })
@@ -215,7 +226,7 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
 
 }
 
-PlayerStatsSchema.methods.getModeStats = function (username, platform, gamemode) {
+PlayerStatsSchema.methods.getModeStats = (username, platform, gamemode) => {
 
     // PlayerStatsModel creation
     let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');

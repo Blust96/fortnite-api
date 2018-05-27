@@ -10,7 +10,7 @@ module.exports = {
                     'error': {
                         'code': errCode,
                         'message': 'Bad Request',
-                        'description': 'Invalid parameters. The platform or gamemode provided as parameters were not valid for the request.'
+                        'description': 'Invalid parameters. The platform or gamemode or type provided as parameters were not valid for the request.'
                     }
                 };
                 break;
