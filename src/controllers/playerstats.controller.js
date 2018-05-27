@@ -7,33 +7,37 @@ exports.getPlayerStats = (req, res) => {
     // Get url parameters
     let platform = req.params.platform;
     let username = req.params.username;
-
-    // Promise execution
-    playerStats.getPlayerStats(username, platform)
-        .then(result => {
-            return res.send(result);
-        })
-        .catch(err => {
-            return res.send(err);
-        });
-
-}
-
-// Returns gamemode stats of a player
-exports.getModeStats = (req, res) => {
-
-    // Get url parameters
-    let platform = req.params.platform;
-    let username = req.params.username;
     let gamemode = req.params.gamemode;
 
-    // Promise execution
-    playerStats.getModeStats(username, platform, gamemode)
-        .then(result => {
-            return res.send(result);
-        })
-        .catch(err => {
-            return res.send(err);
-        });
+    if(!gamemode) {
+        // Promise execution
+        playerStats.getPlayerStats(username, platform)
+            .then(result => {
+                res.type('application/json');
+                return res.status(200).send(result);
+            })
+            .catch(err => {
+                res.type('application/json');
+                return res.status(err.httpCode).send({
+                    'error': err.error
+                });
+            });
+    } else {
+        // Promise execution
+        playerStats.getModeStats(username, platform, gamemode)
+            .then(result => {
+                res.type('application/json');
+                return res.status(200).send(result);
+            })
+            .catch(err => {
+                res.type('application/json');
+                return res.status(err.httpCode).send({
+                    'error': err.error
+                });
+            });
+    }
+
+
+
 
 }

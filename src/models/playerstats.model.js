@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 
 // Fortnite API connection configurations
 const authConfig = require('../../config/auth.config.js');
+const errorsManager = require('../../tools/errors_manager.js');
 const fortniteTools = require('../../tools/fortnite_tools.js');
 const FortniteAuth = require('../../tools/fortnite_auth.js');
 const fortniteConnection = new FortniteAuth([
@@ -112,11 +113,9 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
                     if (result !== false) {
 
                         var dbResult = result;
-                        console.log('has stats');
 
                         // If currentDate is greater than last updatedDate defined in checkInterval
                         if (PlayerStatsModel.checkInterval(dbResult.updatedAt)) {
-                            console.log('interval is greater');
 
                             // Connection to Fortnite API
                             fortniteConnection.login()
@@ -134,29 +133,26 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
 
                                                 (err, doc) => {
 
-                                                    console.log('findbyid');
-
                                                     if (err) {
                                                         console.log(err);
-                                                        reject(err);
+                                                        reject(errorsManager.getError(500));
                                                     }
-
-                                                    else {
-                                                        console.log(doc);
+                                                    else
                                                         resolve(doc);
-                                                    }
 
                                                 });
                                         })
                                         // getStatsBR err
                                         .catch(err => {
-                                            reject(err);
+                                            console.log(err);
+                                            reject(errorsManager.getError(err));
                                         });
 
                                 })
                                 // login err
                                 .catch(err => {
-                                    reject(err);
+                                    console.log(err);
+                                    reject(errorsManager.getError(err));
                                 });
 
                         } else {
@@ -181,8 +177,11 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
 
                                         // Add document into collection globalStats
                                         StatsModel.save((err) => {
-                                            if (err)
-                                                reject(err);
+                                            if (err) {
+                                                console.log(err);
+                                                reject(errorsManager.getError(err));
+                                            }
+
                                             else
                                                 resolve(result);
                                         });
@@ -190,12 +189,14 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
                                     })
                                     // getStatsBR err
                                     .catch(err => {
-                                        reject(err);
+                                        console.log(err);
+                                        reject(errorsManager.getError(err));
                                     });
                             })
                             // login err
                             .catch(err => {
-                                reject(err);
+                                console.log(err);
+                                reject(errorsManager.getError(err));
                             });
 
                     }
@@ -203,11 +204,12 @@ PlayerStatsSchema.methods.getPlayerStats = function (username, platform) {
                 })
                 // getStats err
                 .catch(err => {
-                        reject(err);
-                    })
+                    console.log(err);
+                        reject(errorsManager.getError(err));
+                    });
 
         } else
-            reject('Wrong platform');
+            reject(errorsManager.getError(3));
 
     });
 
@@ -263,7 +265,7 @@ PlayerStatsSchema.methods.getModeStats = function (username, platform, gamemode)
                                                             case 'squad':
                                                                 resolve(doc.global.squad);
                                                             default:
-                                                                reject('Wrong game mode');
+                                                                reject(errorsManager.getError(3));
                                                         }
 
                                                     }
@@ -273,11 +275,13 @@ PlayerStatsSchema.methods.getModeStats = function (username, platform, gamemode)
                                         })
                                         // getBRStats err
                                         .catch(err => {
-                                            reject(err);
+                                            console.log(err);
+                                            reject(errorsManager.getError(err));
                                         })
                                 // Login err
                                 }).catch(err => {
-                                    reject(err);
+                                    console.log(err);
+                                    reject(errorsManager.getError(err));
                                 });
 
                         } else {
@@ -290,7 +294,7 @@ PlayerStatsSchema.methods.getModeStats = function (username, platform, gamemode)
                                 case 'squad':
                                     resolve(dbResult.global.squad);
                                 default:
-                                    reject('Wrong game mode');
+                                    reject(errorsManager.getError(3));
                             }
 
                         }
@@ -300,11 +304,12 @@ PlayerStatsSchema.methods.getModeStats = function (username, platform, gamemode)
                 })
                 // getStats err
                 .catch(err => {
-                    reject(err);
+                    console.log(err);
+                    reject(errorsManager.getError(err));
                 })
 
         } else
-            reject('Wrong platform or gamemode');
+            reject(errorsManager.getError(3));
 
     });
 
@@ -333,7 +338,6 @@ PlayerStatsSchema.statics.checkInterval = (updatedAt) => {
 
     }
 
-    console.log(greater);
     return greater;
 
 }
@@ -355,7 +359,7 @@ PlayerStatsSchema.statics.getStats = (username, platform) => {
             (err, dbResult) => {
 
                 if (err)
-                    reject(err);
+                    reject(131);
                 else if (dbResult) {
                     resolve(dbResult);
                 }

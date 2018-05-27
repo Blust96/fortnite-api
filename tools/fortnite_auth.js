@@ -119,15 +119,17 @@ class FortniteAuth {
                         resolve(this.expires_at);
                     })
                     .catch(err => {
-                        reject(err);
+                        console.log(err);
+                        reject(131);
                     });
                 })
                 .catch(err => {
-                    reject(err);
+                    console.log(err);
+                    reject(131);
                 });
             })
             .catch(() => {
-                reject("Please enter good token");
+                reject(131);
             });
         });
     }
@@ -171,34 +173,31 @@ class FortniteAuth {
                         method: "GET",
                         json: true
                     })
-                        .then(stats => {
-                            if (fortniteTools.checkStatsPlatform(
-                                stats,
-                                platform.toLowerCase() || "pc"
-                                )
-                            ) {
-                                fortniteTools.convert(
-                                    stats,
-                                    user,
-                                    platform.toLowerCase()
-                                ).then(resultStats => {
-                                    resolve(resultStats);
-                                });
-                            } else {
-                                reject(
-                                    "Impossible to fetch User. User not found on this platform"
-                                );
-                            }
-                        })
-                        .catch(err => {
-                            console.log(err);
-                            reject("Impossible to fetch User.");
-                        });
+                    .then(stats => {
+                        if (fortniteTools.checkStatsPlatform(stats, platform.toLowerCase() || "pc")) {
+                            fortniteTools.convert(stats, user, platform.toLowerCase())
+                            .then(resultStats => {
+                                resolve(resultStats);
+                            });
+                        } else {
+                            // Wrong username, canno't find user
+                            reject(17);
+                        }
+                    })
+                    .catch(err => {
+                        // Wrong username, canno't find user
+                        console.log(err);
+                        reject(131);
+                    });
                 })
-                .catch(() => {
-                    reject("Player Not Found");
+                .catch((err) => {
+                    console.log(err);
+                    // Wrong username, canno't find user
+                    reject(17);
                 });
+
         });
+
     }
 
     checkPlayer(username, platform) {
