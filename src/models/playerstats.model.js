@@ -501,6 +501,8 @@ PlayerStatsSchema.statics.checkInterval = (updatedAt, interval, type = 'minute')
     // Minutes interval allowed not to reload data from API
     let greater = true;
 
+    console.log(updateDateTime.getDate());
+
     // Date comparison
     switch (type) {
 
@@ -521,8 +523,11 @@ PlayerStatsSchema.statics.checkInterval = (updatedAt, interval, type = 'minute')
             console.log('hour');
             // If it's same day and same hour
             if (currentDateTime.getDay() == updateDateTime.getDay() &&
-                currentDateTime.getHours() - updateDateTime.getHours() < interval)
+                currentDateTime.getHours() - updateDateTime.getHours() < interval) {
+                console.log('greater');
                 greater = false;
+            }
+
             break;
 
         default:
@@ -536,6 +541,11 @@ PlayerStatsSchema.statics.checkInterval = (updatedAt, interval, type = 'minute')
 }
 
 PlayerStatsSchema.statics.getStats = (username, platform) => {
+
+    // Space in URI handling
+    username = decodeURI(username);
+    let plusPattern = '\+';
+    username = username.replace(plusPattern, ' ');
 
     // PlayerStatsModel creation
     let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
@@ -581,9 +591,12 @@ PlayerStatsSchema.statics.checkLeaderboardTime = (interval) => {
                 if (err)
                     reject(131);
                 else if (dbResult) {
-                    console.log('has result');
-                    if(PlayerStatsModel.checkInterval(dbResult.updatedAt, interval, 'hour'))
-                        resolve(true);
+
+                    for (let i = 0; i < dbResult.length; i++) {
+                        if(PlayerStatsModel.checkInterval(dbResult[i].updatedAt, interval, 'hour'))
+                            resolve(true);
+                    }
+
                 }
                 else
                     resolve(false);
