@@ -59,7 +59,7 @@ module.exports = {
                 return {
                     'httpCode': 500,
                     'error': {
-                        'code': errCode,
+                        'code': 131,
                         'message': 'Internal Server Error',
                         'description': 'An unknow internal error occurred.'
                     }

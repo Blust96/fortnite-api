@@ -115,7 +115,7 @@ PlayerStatsSchema.methods.getPlayerStats = (username, platform) => {
                         var dbResult = result;
 
                         // If currentDate is greater than last updatedDate defined in checkInterval
-                        if (PlayerStatsModel.checkInterval(dbResult.updatedAt)) {
+                        if (PlayerStatsModel.checkInterval(dbResult.updatedAt, 3)) {
 
                             // Connection to Fortnite API
                             fortniteConnection.login()
@@ -246,7 +246,7 @@ PlayerStatsSchema.methods.getModeStats = (username, platform, gamemode) => {
                         var dbResult = result;
 
                         // If currentDate is greater than last updatedDate defined in checkInterval
-                        if(PlayerStatsModel.checkInterval(dbResult.updatedAt)) {
+                        if(PlayerStatsModel.checkInterval(dbResult.updatedAt, 3)) {
 
                             fortniteConnection.login()
 
@@ -261,7 +261,7 @@ PlayerStatsSchema.methods.getModeStats = (username, platform, gamemode) => {
                                             // Update document by id
                                             PlayerStatsModel.findByIdAndUpdate(dbResult._id, result,
 
-                                                (err, doc) => {
+                                                (err, updatedStats) => {
 
                                                     if(err)
                                                         reject(err);
@@ -270,13 +270,17 @@ PlayerStatsSchema.methods.getModeStats = (username, platform, gamemode) => {
 
                                                         switch (gamemode) {
                                                             case 'solo':
-                                                                resolve(doc.global.solo);
+                                                                resolve(updatedStats.global.solo);
+                                                                break;
                                                             case 'duo':
-                                                                resolve(doc.global.duo);
+                                                                resolve(updatedStats.global.duo);
+                                                                break;
                                                             case 'squad':
-                                                                resolve(doc.global.squad);
+                                                                resolve(updatedStats.global.squad);
+                                                                break;
                                                             default:
                                                                 reject(errorsManager.getError(3));
+                                                                break;
                                                         }
 
                                                     }
@@ -300,15 +304,71 @@ PlayerStatsSchema.methods.getModeStats = (username, platform, gamemode) => {
                             switch (gamemode) {
                                 case 'solo':
                                     resolve(dbResult.global.solo);
+                                    break;
                                 case 'duo':
                                     resolve(dbResult.global.duo);
+                                    break;
                                 case 'squad':
                                     resolve(dbResult.global.squad);
+                                    break;
                                 default:
                                     reject(errorsManager.getError(3));
+                                    break;
                             }
 
                         }
+
+                    } else {
+
+                        // Connection to Fortnite API
+                        fortniteConnection.login()
+
+                            .then(() => {
+                                console.log('Successfully connected to Fortnite API');
+
+                                // Get stats for specified player
+                                fortniteConnection.getStatsBR(username, platform)
+
+                                    .then(stats => {
+
+                                        // Document creation that will be save into fortniteApi database
+                                        let StatsModel = new PlayerStatsModel(stats);
+
+                                        // Add document into collection globalStats
+                                        StatsModel.save((err, createdStats) => {
+                                            if (err) {
+                                                console.log(err);
+                                                reject(errorsManager.getError(err));
+                                            }
+                                            else
+                                                switch (gamemode) {
+                                                    case 'solo':
+                                                        resolve(createdStats.global.solo);
+                                                        break;
+                                                    case 'duo':
+                                                        resolve(createdStats.global.duo);
+                                                        break;
+                                                    case 'squad':
+                                                        resolve(createdStats.global.squad);
+                                                        break;
+                                                    default:
+                                                        reject(errorsManager.getError(3));
+                                                        break;
+                                                }
+                                        });
+
+                                    })
+                                    // getStatsBR err
+                                    .catch(err => {
+                                        console.log(err);
+                                        reject(errorsManager.getError(err));
+                                    });
+                            })
+                            // login err
+                            .catch(err => {
+                                console.log(err);
+                                reject(errorsManager.getError(err));
+                            });
 
                     }
 
@@ -326,26 +386,148 @@ PlayerStatsSchema.methods.getModeStats = (username, platform, gamemode) => {
 
 }
 
-PlayerStatsSchema.statics.checkInterval = (updatedAt) => {
+PlayerStatsSchema.methods.getLeaderboard = (platform, gamemode, type) => {
+
+    // LeaderboardModel creation
+    let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
+
+    return new Promise((resolve, reject) => {
+
+        if(fortniteTools.checkType(type) && fortniteTools.checkGameMode(gamemode) && fortniteTools.checkPlatform(platform)) {
+
+            PlayerStatsModel.checkLeaderboardTime(2)
+                .then((greater) => {
+
+                    // Si l'interval est supérieur
+                    // if(greater) {
+                    //
+                    //     PlayerStatsModel.updateAllStats()
+                    //         .then((updatedLeaderboard) => {
+                    //
+                    //         })
+                    //         .catch((err) => {
+                    //             reject(errorsManager.getError(err));
+                    //         });
+                    //
+                    // } else {
+                    //
+                        PlayerStatsModel.getAllStats(platform, gamemode, type)
+                            .then((leaderboard) => {
+                                resolve(leaderboard);
+                            })
+                            .catch((err) => {
+                               reject(errorsManager.getError(err));
+                            });
+                    //
+                    // }
+
+                })
+                .catch((err) => {
+                    reject(errorsManager.getError(err));
+                })
+
+
+
+        } else {
+            reject(errorsManager.getError(3));
+        }
+
+    });
+
+}
+
+PlayerStatsSchema.methods.getAllStats = (platform, gamemode, type) => {
+
+    console.log('GetAll');
+
+    // PlayerStatsModel creation
+    let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
+
+    let options = {
+        'info.platform': platform,
+        'global[]': gamemode
+    }
+
+    return new Promise((resolve, reject) => {
+
+        // Get all players
+        PlayerStatsModel.find(options)
+            .sort(type, -1)
+            .all((err, dbResult) => {
+
+                if (err) {
+                    console.log(err);
+                    reject(131);
+                }
+                else (dbResult)
+                    resolve(dbResult);
+
+            });
+
+        // if (err)
+        //     reject(131);
+        // else {
+        //
+        //
+        //     }
+        //     resolve(dbResult);
+        // }
+
+    });
+
+}
+
+PlayerStatsSchema.methods.updateAllStats = () => {
+
+    // PlayerStatsModel creation
+    let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
+
+    return new Promise((resolve, reject) => {
+
+        // Get all players
+        PlayerStatsModel.find()
+        // Update player one by one
+        // Return array of all players ?
+
+    });
+
+}
+
+PlayerStatsSchema.statics.checkInterval = (updatedAt, interval, type = 'minute') => {
 
     // Vars to compare current and updated date time
     let currentDateTime = new Date();
     let updateDateTime = new Date(updatedAt);
     // Minutes interval allowed not to reload data from API
-    let minutesInterval = 3;
     let greater = true;
 
-    // console.log('current: ' + currentDateTime + ' updated : ' + updateDateTime);
-
     // Date comparison
-    // If it's same day and same hour
-    if (currentDateTime.getDay() == updateDateTime.getDay() &&
-        currentDateTime.getHours() == updateDateTime.getHours()) {
+    switch (type) {
 
-        // If interval is lower than the one defined
-        if (currentDateTime.getMinutes() - updateDateTime.getMinutes() < minutesInterval) {
-            greater = false;
-        }
+        case 'minute':
+            // If it's same day and same hour
+            if (currentDateTime.getDay() == updateDateTime.getDay() &&
+                currentDateTime.getHours() == updateDateTime.getHours()) {
+
+                // If interval is lower than the one defined
+                if (currentDateTime.getMinutes() - updateDateTime.getMinutes() < interval) {
+                    greater = false;
+                }
+
+            }
+            break;
+
+        case 'hour':
+            console.log('hour');
+            // If it's same day and same hour
+            if (currentDateTime.getDay() == updateDateTime.getDay() &&
+                currentDateTime.getHours() - updateDateTime.getHours() < interval)
+                greater = false;
+            break;
+
+        default:
+            return 131;
+            break;
 
     }
 
@@ -373,6 +555,35 @@ PlayerStatsSchema.statics.getStats = (username, platform) => {
                     reject(131);
                 else if (dbResult) {
                     resolve(dbResult);
+                }
+                else
+                    resolve(false);
+
+            });
+
+    });
+
+}
+
+PlayerStatsSchema.statics.checkLeaderboardTime = (interval) => {
+
+    console.log('checkBoardTime');
+
+    // PlayerStatsModel creation
+    let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
+
+    return new Promise((resolve, reject) => {
+
+        PlayerStatsModel.find(
+
+            (err, dbResult) => {
+
+                if (err)
+                    reject(131);
+                else if (dbResult) {
+                    console.log('has result');
+                    if(PlayerStatsModel.checkInterval(dbResult.updatedAt, interval, 'hour'))
+                        resolve(true);
                 }
                 else
                     resolve(false);

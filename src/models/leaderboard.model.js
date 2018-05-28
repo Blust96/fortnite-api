@@ -1,6 +1,9 @@
 // Mongoose importation
 const mongoose = require('mongoose');
 
+// Player Stats model importation
+const PlayerStatsModel = require('./playerstats.model.js');
+
 // Fortnite API connection configurations
 const authConfig = require('../../config/auth.config.js');
 const errorsManager = require('../../tools/errors_manager.js');
@@ -38,7 +41,7 @@ const LeaderboardSchema = mongoose.Schema({
 
 LeaderboardSchema.methods.getLeaderboard = (platform, gamemode, type) => {
 
-    // PlayerStatsModel creation
+    // LeaderboardModel creation
     let LeaderboardModel = mongoose.model('Leaderboard', LeaderboardSchema, 'leaderboard');
 
     return new Promise((resolve, reject) => {
@@ -54,6 +57,12 @@ LeaderboardSchema.methods.getLeaderboard = (platform, gamemode, type) => {
         }
 
     });
+
+}
+
+LeaderboardSchema.static.updateLeaderboard = () => {
+
+    const playerStats = new PlayerStatsModel();
 
 }
 

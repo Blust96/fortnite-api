@@ -40,7 +40,6 @@ app.use(function (req, res, next) {
 
 // Requiring API's routes
 require('./src/routes/playerstats.route.js')(app);
-require('./src/routes/leaderboard.route.js')(app);
 
 app.listen(3000, function () {
     console.log("Server listening on port 3000");
