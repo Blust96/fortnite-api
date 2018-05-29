@@ -34,6 +34,7 @@ app.use(function (req, res, next) {
     // Request headers you wish to allow
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, content-type, Authorization, Content-Type');
     // Pass to next layer of middleware
+    res.set('Cache-control', 'max-age=3600');
     next();
 });
 
