@@ -371,9 +371,20 @@ PlayerStatsSchema.methods.getLeaderboard = (platform, gamemode, type) => {
                     // Si l'interval est supérieur
                     if(greater) {
 
+                        console.log('greater');
+
                         PlayerStatsModel.updateAllUsers()
-                            .then((updatedLeaderboard) => {
-                                resolve('ok');
+                            .then(() => {
+
+                                PlayerStatsModel.getAllStats(platform, gamemode, type)
+                                    .then((leaderboard) => {
+                                        resolve(leaderboard);
+                                    })
+                                    .catch((err) => {
+                                        console.log(err);
+                                        reject(errorsManager.getError(err));
+                                    });
+
                             })
                             .catch((err) => {
                                 reject(errorsManager.getError(err));
@@ -442,7 +453,10 @@ PlayerStatsSchema.statics.getAllStats = (platform, gamemode, type) => {
                     reject(131);
                 }
                 else if (dbResult) {
-                    resolve(dbResult);
+                    resolve({'platform': platform,
+                        'type': type,
+                        'leaderboard': dbResult
+                        });
                 }
 
             });
@@ -521,7 +535,8 @@ PlayerStatsSchema.statics.updateAllUsers = () => {
                 }
                 else if (dbResult) {
                     for (let i = 0; i < dbResult.length; i++) {
-                        PlayerStatsModel.updatePlayerStats(dbResult[i].username, dbResult[i].platform, dbResult[i]._id)
+                        console.log(dbResult[i].info.username, dbResult[i].info.platform, dbResult[i]._id);
+                        PlayerStatsModel.updatePlayerStats(dbResult[i].info.username, dbResult[i].info.platform, dbResult[i]._id)
                             .then(() => {
                                 resolve();
                             })
@@ -554,14 +569,15 @@ PlayerStatsSchema.statics.checkInterval = (updatedAt, interval, type = 'minute')
     switch (type) {
 
         case 'minute':
-            if (((currentDateTime / (1000*60) % 60) - (updateDateTime / (1000*60) % 60)) < interval) {
+            if (((currentDateTime - updateDateTime) / (1000*60) % 60) < interval) {
                 greater = false;
             }
             break;
 
         case 'hour':
-            if (((currentDateTime / (1000*60*60) % 24) - (updateDateTime / (1000*60*60) % 24)) < interval) {
-                greater = false;
+            greater = false;
+            if (((currentDateTime - updateDateTime) / (1000*60*60) % 24) > interval) {
+                greater = true;
             }
             break;
 
@@ -571,6 +587,7 @@ PlayerStatsSchema.statics.checkInterval = (updatedAt, interval, type = 'minute')
 
     }
 
+    console.log(greater);
     return greater;
 
 }
@@ -590,13 +607,15 @@ PlayerStatsSchema.statics.checkLeaderboardTime = (interval) => {
                     reject(131);
                 else if (dbResult) {
 
+                    let needUpdate = false;
+
                     for (let i = 0; i < dbResult.length; i++) {
                         if(PlayerStatsModel.checkInterval(dbResult[i].updatedAt, interval, 'hour')) {
-                            resolve(true);
-                        } else {
-                            resolve(false);
+                            needUpdate = true;
                         }
                     }
+
+                    resolve(needUpdate);
 
                 }
 
