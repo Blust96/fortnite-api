@@ -1,0 +1,16 @@
+{
+  "name": "Fortnite API",
+  "version": "0.1.0",
+  "description": "Fortnite API Doc - Describes the differents routes of the API with their return values",
+  "title": "Fortnite API Documentatopn",
+  "url": "http://167.99.199.7",
+  "sampleUrl": false,
+  "defaultVersion": "0.0.0",
+  "apidoc": "0.3.0",
+  "generator": {
+    "name": "apidoc",
+    "time": "2018-05-29T14:55:00.715Z",
+    "url": "http://apidocjs.com",
+    "version": "0.17.6"
+  }
+}

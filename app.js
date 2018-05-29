@@ -35,6 +35,8 @@ app.use(function (req, res, next) {
     next();
 });
 
+app.use('/', express.static('public'));
+
 // Requiring API's routes
 require('./src/routes/playerstats.route.js')(app);
 
