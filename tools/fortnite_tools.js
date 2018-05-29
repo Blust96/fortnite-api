@@ -25,7 +25,7 @@ module.exports = {
 
     // Check if platform is valid
     checkPlatform: (platform) => {
-        if(!(platform == 'pc' || platform == 'ps4' || platform == 'xb1'))
+        if(!(platform == 'pc' || platform == 'ps4' || platform == 'xb1' || platform == 'all'))
             return false;
         else
             return true;
@@ -33,7 +33,7 @@ module.exports = {
 
     // Check if gamemode is valid
     checkGameMode: (gamemode) => {
-        if(!(gamemode == 'solo' || gamemode == 'duo' || gamemode == 'squad'))
+        if(!(gamemode == 'solo' || gamemode == 'duo' || gamemode == 'squad' || gamemode == 'all'))
             return false;
         else
             return true;

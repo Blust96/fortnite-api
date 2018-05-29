@@ -117,43 +117,13 @@ PlayerStatsSchema.methods.getPlayerStats = (username, platform) => {
                         // If currentDate is greater than last updatedDate defined in checkInterval
                         if (PlayerStatsModel.checkInterval(dbResult.updatedAt, 3)) {
 
-                            // Connection to Fortnite API
-                            fortniteConnection.login()
+                            // Updating player stats
+                            PlayerStatsModel.updatePlayerStats(username, platform, dbResult._id)
 
-                                .then(() => {
-                                    console.log('Successfully connected to Fortnite API');
-
-                                    // Get stats for specified player
-                                    fortniteConnection.getStatsBR(username, platform)
-
-                                        .then(result => {
-
-                                            // Update document by id
-                                            PlayerStatsModel.findByIdAndUpdate(dbResult._id, result,
-
-                                                (err, doc) => {
-
-                                                    if (err) {
-                                                        console.log(err);
-                                                        reject(errorsManager.getError(500));
-                                                    }
-                                                    else
-                                                        resolve({
-                                                            'global': doc.global,
-                                                            'info': doc.info,
-                                                            'lifetimeStats': doc.lifetimeStats
-                                                        });
-
-                                                });
-                                        })
-                                        // getStatsBR err
-                                        .catch(err => {
-                                            console.log(err);
-                                            reject(errorsManager.getError(err));
-                                        });
-
+                                .then((updatedStats) => {
+                                    resolve(updatedStats);
                                 })
-                                // login err
+                                // Updating err
                                 .catch(err => {
                                     console.log(err);
                                     reject(errorsManager.getError(err));
@@ -399,27 +369,28 @@ PlayerStatsSchema.methods.getLeaderboard = (platform, gamemode, type) => {
                 .then((greater) => {
 
                     // Si l'interval est supérieur
-                    // if(greater) {
-                    //
-                    //     PlayerStatsModel.updateAllStats()
-                    //         .then((updatedLeaderboard) => {
-                    //
-                    //         })
-                    //         .catch((err) => {
-                    //             reject(errorsManager.getError(err));
-                    //         });
-                    //
-                    // } else {
-                    //
+                    if(greater) {
+
+                        PlayerStatsModel.updateAllUsers()
+                            .then((updatedLeaderboard) => {
+                                resolve('ok');
+                            })
+                            .catch((err) => {
+                                reject(errorsManager.getError(err));
+                            });
+
+                    } else {
+
                         PlayerStatsModel.getAllStats(platform, gamemode, type)
                             .then((leaderboard) => {
                                 resolve(leaderboard);
                             })
                             .catch((err) => {
+                                console.log(err);
                                reject(errorsManager.getError(err));
                             });
-                    //
-                    // }
+
+                    }
 
                 })
                 .catch((err) => {
@@ -436,48 +407,105 @@ PlayerStatsSchema.methods.getLeaderboard = (platform, gamemode, type) => {
 
 }
 
-PlayerStatsSchema.methods.getAllStats = (platform, gamemode, type) => {
-
-    console.log('GetAll');
+// TODO: Ajouter type + plateforme dans resolve
+PlayerStatsSchema.statics.getAllStats = (platform, gamemode, type) => {
 
     // PlayerStatsModel creation
     let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
 
-    let options = {
-        'info.platform': platform,
-        'global[]': gamemode
+    // String to define what to return from database
+    let dbPath, dbReturn, options;
+
+    if(gamemode == 'all') {
+        dbPath = 'lifetimeStats.' + type;
+        dbReturn = dbPath + ' info -_id';
+    } else {
+        dbPath = 'global.' + gamemode + '.' + type;
+        dbReturn = dbPath + ' info -_id';
     }
+
+    if(platform == 'all')
+        options = {};
+    else
+        options = {
+            'info.platform': platform
+        }
 
     return new Promise((resolve, reject) => {
 
-        // Get all players
-        PlayerStatsModel.find(options)
-            .sort(type, -1)
-            .all((err, dbResult) => {
+        // Get all players ordered by type, where platform
+        PlayerStatsModel.find(options, dbReturn)
+            .sort('-' + dbPath)
+            .exec((err, dbResult) => {
 
                 if (err) {
-                    console.log(err);
                     reject(131);
                 }
-                else (dbResult)
+                else if (dbResult) {
                     resolve(dbResult);
+                }
 
             });
-
-        // if (err)
-        //     reject(131);
-        // else {
-        //
-        //
-        //     }
-        //     resolve(dbResult);
-        // }
 
     });
 
 }
 
-PlayerStatsSchema.methods.updateAllStats = () => {
+PlayerStatsSchema.statics.updatePlayerStats = (username, platform, id) => {
+
+    return new Promise((resolve, reject) => {
+
+        // PlayerStatsModel creation
+        let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
+
+        // Connection to Fortnite API
+        fortniteConnection.login()
+
+            .then(() => {
+                console.log('Successfully connected to Fortnite API');
+
+                // Get stats for specified player
+                fortniteConnection.getStatsBR(username, platform)
+
+                    .then(result => {
+
+                        // Update document by id
+                        PlayerStatsModel.findByIdAndUpdate(id, result,
+
+                            (err, updatedStats) => {
+
+                                if (err) {
+                                    console.log(err);
+                                    reject(errorsManager.getError(500));
+                                }
+                                else
+                                    resolve({
+                                        'global': updatedStats.global,
+                                        'info': updatedStats.info,
+                                        'lifetimeStats': updatedStats.lifetimeStats
+                                    });
+
+                            });
+                    })
+                    // getStatsBR err
+                    .catch(err => {
+                        console.log(err);
+                        reject(errorsManager.getError(err));
+                    });
+
+            })
+            // login err
+            .catch(err => {
+                console.log(err);
+                reject(errorsManager.getError(err));
+            });
+
+    });
+
+}
+
+// TODO: Vérifier le retour
+PlayerStatsSchema.statics.updateAllUsers = () => {
 
     // PlayerStatsModel creation
     let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
@@ -485,9 +513,25 @@ PlayerStatsSchema.methods.updateAllStats = () => {
     return new Promise((resolve, reject) => {
 
         // Get all players
-        PlayerStatsModel.find()
-        // Update player one by one
-        // Return array of all players ?
+        PlayerStatsModel.find({}, 'info')
+            .exec((err, dbResult) => {
+
+                if (err) {
+                    reject(131);
+                }
+                else if (dbResult) {
+                    for (let i = 0; i < dbResult.length; i++) {
+                        PlayerStatsModel.updatePlayerStats(dbResult[i].username, dbResult[i].platform, dbResult[i]._id)
+                            .then(() => {
+                                resolve();
+                            })
+                            .catch((err) => {
+                                reject(err);
+                            })
+                    }
+                }
+
+            });
 
     });
 
@@ -496,38 +540,29 @@ PlayerStatsSchema.methods.updateAllStats = () => {
 PlayerStatsSchema.statics.checkInterval = (updatedAt, interval, type = 'minute') => {
 
     // Vars to compare current and updated date time
-    let currentDateTime = new Date();
-    let updateDateTime = new Date(updatedAt);
+    let currentDate = new Date();
+    let updateDate = new Date(updatedAt);
+
+    // Convert in numeric value
+    let currentDateTime = currentDate.getTime();
+    let updateDateTime = updateDate.getTime();
+
     // Minutes interval allowed not to reload data from API
     let greater = true;
-
-    console.log(updateDateTime.getDate());
 
     // Date comparison
     switch (type) {
 
         case 'minute':
-            // If it's same day and same hour
-            if (currentDateTime.getDay() == updateDateTime.getDay() &&
-                currentDateTime.getHours() == updateDateTime.getHours()) {
-
-                // If interval is lower than the one defined
-                if (currentDateTime.getMinutes() - updateDateTime.getMinutes() < interval) {
-                    greater = false;
-                }
-
+            if (((currentDateTime / (1000*60) % 60) - (updateDateTime / (1000*60) % 60)) < interval) {
+                greater = false;
             }
             break;
 
         case 'hour':
-            console.log('hour');
-            // If it's same day and same hour
-            if (currentDateTime.getDay() == updateDateTime.getDay() &&
-                currentDateTime.getHours() - updateDateTime.getHours() < interval) {
-                console.log('greater');
+            if (((currentDateTime / (1000*60*60) % 24) - (updateDateTime / (1000*60*60) % 24)) < interval) {
                 greater = false;
             }
-
             break;
 
         default:
@@ -540,44 +575,7 @@ PlayerStatsSchema.statics.checkInterval = (updatedAt, interval, type = 'minute')
 
 }
 
-PlayerStatsSchema.statics.getStats = (username, platform) => {
-
-    // Space in URI handling
-    username = decodeURI(username);
-    let plusPattern = '\+';
-    username = username.replace(plusPattern, ' ');
-
-    // PlayerStatsModel creation
-    let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
-
-    return new Promise((resolve, reject) => {
-
-        let options = {
-            'info.username': username,
-            'info.platform': platform
-        }
-
-        PlayerStatsModel.findOne(options,
-
-            (err, dbResult) => {
-
-                if (err)
-                    reject(131);
-                else if (dbResult) {
-                    resolve(dbResult);
-                }
-                else
-                    resolve(false);
-
-            });
-
-    });
-
-}
-
 PlayerStatsSchema.statics.checkLeaderboardTime = (interval) => {
-
-    console.log('checkBoardTime');
 
     // PlayerStatsModel creation
     let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
@@ -593,10 +591,48 @@ PlayerStatsSchema.statics.checkLeaderboardTime = (interval) => {
                 else if (dbResult) {
 
                     for (let i = 0; i < dbResult.length; i++) {
-                        if(PlayerStatsModel.checkInterval(dbResult[i].updatedAt, interval, 'hour'))
+                        if(PlayerStatsModel.checkInterval(dbResult[i].updatedAt, interval, 'hour')) {
                             resolve(true);
+                        } else {
+                            resolve(false);
+                        }
                     }
 
+                }
+
+            });
+
+    });
+
+}
+
+PlayerStatsSchema.statics.getStats = (username, platform) => {
+
+    // Space in URI handling
+    username = decodeURI(username);
+    let plusPattern = '\+';
+    username = username.replace(plusPattern, ' ');
+
+    // PlayerStatsModel creation
+    let PlayerStatsModel = mongoose.model('PlayerStats', PlayerStatsSchema, 'globalStats');
+
+    return new Promise((resolve, reject) => {
+
+        // Options configuration
+        let options = {
+            'info.username': username,
+            'info.platform': platform
+        }
+
+        // Find one user by username
+        PlayerStatsModel.findOne(options,
+
+            (err, dbResult) => {
+
+                if (err)
+                    reject(131);
+                else if (dbResult) {
+                    resolve(dbResult);
                 }
                 else
                     resolve(false);
