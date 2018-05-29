@@ -23,6 +23,8 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.use('/', express.static('public/apidoc'));
+
 // CORS Configuration
 app.use(function (req, res, next) {
     // Website you wish to allow to connect
@@ -34,8 +36,6 @@ app.use(function (req, res, next) {
     // Pass to next layer of middleware
     next();
 });
-
-app.use('/', express.static('public'));
 
 // Requiring API's routes
 require('./src/routes/playerstats.route.js')(app);
