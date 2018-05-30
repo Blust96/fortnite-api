@@ -70,6 +70,7 @@ const PlayerStatsSchema = mongoose.Schema({
     },
     info: {
         accountId: String,
+        username_lower: String,
         username: String,
         platform: String
     },
@@ -94,7 +95,6 @@ const PlayerStatsSchema = mongoose.Schema({
     timestamps: true
 });
 
-// TODO: Better method organization (change call order)
 PlayerStatsSchema.methods.getPlayerStats = (username, platform) => {
 
     // PlayerStatsModel creation
@@ -418,7 +418,6 @@ PlayerStatsSchema.methods.getLeaderboard = (platform, gamemode, type) => {
 
 }
 
-// TODO: Ajouter type + plateforme dans resolve
 PlayerStatsSchema.statics.getAllStats = (platform, gamemode, type) => {
 
     // PlayerStatsModel creation
@@ -639,7 +638,7 @@ PlayerStatsSchema.statics.getStats = (username, platform) => {
 
         // Options configuration
         let options = {
-            'info.username': username,
+            'info.username_lower': username.toLowerCase(),
             'info.platform': platform
         }
 

@@ -5,7 +5,7 @@ const playerStats = new PlayerStatsModel();
 exports.getPlayerStats = (req, res) => {
 
     // Get url parameters
-    let platform = req.params.platform;
+    let platform = req.params.platform.toLowerCase();
     let username = req.params.username;
     let gamemode = req.params.gamemode;
 
@@ -23,6 +23,7 @@ exports.getPlayerStats = (req, res) => {
                 });
             });
     } else {
+        gamemode.toLowerCase();
         // Promise execution
         playerStats.getModeStats(username, platform, gamemode)
             .then(result => {
@@ -43,9 +44,9 @@ exports.getPlayerStats = (req, res) => {
 exports.getLeaderBoard = (req, res) => {
 
     // Get url parameters
-    let gamemode = req.params.gamemode;
-    let platform = req.params.platform;
-    let type = req.params.type;
+    let gamemode = req.params.gamemode.toLowerCase();
+    let platform = req.params.platform.toLowerCase();
+    let type = req.params.type.toLowerCase();
 
     playerStats.getLeaderboard(platform, gamemode, type)
         .then(result => {

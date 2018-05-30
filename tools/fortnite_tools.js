@@ -127,6 +127,7 @@ module.exports = {
                 },
                 info: {
                     accountId: user.id,
+                    username_lower: user.displayName.toLowerCase(),
                     username: user.displayName,
                     platform: platform
                 },
